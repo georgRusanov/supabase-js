@@ -111,6 +111,16 @@ const content = `
       log('Creating channel...')
       const channel = supabase.channel('realtime:public:todos')
 
+      // Log channel internals
+      log('Channel type: ' + typeof channel)
+      log('Channel keys: ' + Object.keys(channel || {}))
+      
+      if (channel) {
+        log('Channel topic: ' + (channel.topic || 'undefined'))
+        log('Channel state: ' + (channel.state || 'undefined'))
+        log('Channel joinedOnce: ' + (channel.joinedOnce || 'undefined'))
+      }
+
       // Log realtime client internals
       log('Realtime client type: ' + typeof supabase.realtime)
       log('Realtime client keys: ' + Object.keys(supabase.realtime || {}))
