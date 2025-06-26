@@ -69,6 +69,39 @@ const content = `
         }
       }
 
+      // Intercept XMLHttpRequest for potential fallback
+      const originalXHR = window.XMLHttpRequest
+      let xhrCalls = []
+      
+      window.XMLHttpRequest = function() {
+        const xhr = new originalXHR()
+        const originalOpen = xhr.open
+        xhr.open = function(method, url, ...args) {
+          xhrCalls.push(url)
+          log('XMLHttpRequest opened: ' + method + ' ' + url)
+          return originalOpen.apply(this, [method, url, ...args])
+        }
+        return xhr
+      }
+
+      // Intercept setTimeout/setInterval for polling
+      const originalSetTimeout = window.setTimeout
+      const originalSetInterval = window.setInterval
+      let timeoutCalls = []
+      let intervalCalls = []
+      
+      window.setTimeout = function(fn, delay, ...args) {
+        timeoutCalls.push({fn: fn.toString().substring(0, 50), delay})
+        log('setTimeout called with delay: ' + delay)
+        return originalSetTimeout.apply(this, [fn, delay, ...args])
+      }
+      
+      window.setInterval = function(fn, delay, ...args) {
+        intervalCalls.push({fn: fn.toString().substring(0, 50), delay})
+        log('setInterval called with delay: ' + delay)
+        return originalSetInterval.apply(this, [fn, delay, ...args])
+      }
+
       log('Creating Supabase client...')
       const supabase = window.supabase.createClient(
         'http://127.0.0.1:54321',
@@ -91,6 +124,14 @@ const content = `
       log('Subscribing to channel...')
       channel.subscribe((status) => {
         log('subscribe callback called with: ' + status)
+        
+        // Check connection state after subscription
+        setTimeout(() => {
+          log('After subscription - Realtime transport: ' + (supabase.realtime.transport || 'undefined'))
+          log('After subscription - Realtime connection state: ' + (supabase.realtime.connectionState ? supabase.realtime.connectionState() : 'undefined'))
+          log('After subscription - Realtime is connected: ' + (supabase.realtime.isConnected ? supabase.realtime.isConnected() : 'undefined'))
+          log('After subscription - Realtime conn: ' + (supabase.realtime.conn ? 'exists' : 'null'))
+        }, 1000)
       })
 
       setTimeout(() => {
@@ -98,6 +139,9 @@ const content = `
         log('Fetch calls: ' + JSON.stringify(fetchCalls))
         log('EventSource calls: ' + JSON.stringify(eventSourceCalls))
         log('Worker calls: ' + JSON.stringify(workerCalls))
+        log('XMLHttpRequest calls: ' + JSON.stringify(xhrCalls))
+        log('setTimeout calls: ' + JSON.stringify(timeoutCalls))
+        log('setInterval calls: ' + JSON.stringify(intervalCalls))
         log('Final log content: ' + document.getElementById('log').textContent)
       }, 3000)
     </script>
@@ -184,6 +228,24 @@ describe('UMD subscribe test', () => {
       console.log('Web Worker was created')
     } else {
       console.log('No Web Worker detected')
+    }
+
+    if (logContent.includes('XMLHttpRequest opened:')) {
+      console.log('XMLHttpRequest was used (XMLHttpRequest detected)')
+    } else {
+      console.log('No XMLHttpRequest detected')
+    }
+
+    if (logContent.includes('setTimeout called with delay:')) {
+      console.log('setTimeout was used (setTimeout detected)')
+    } else {
+      console.log('No setTimeout detected')
+    }
+
+    if (logContent.includes('setInterval called with delay:')) {
+      console.log('setInterval was used (setInterval detected)')
+    } else {
+      console.log('No setInterval detected')
     }
 
     assertStringIncludes(logContent, 'subscribe callback called with: SUBSCRIBED')
