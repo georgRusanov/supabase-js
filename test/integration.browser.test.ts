@@ -1,51 +1,49 @@
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
-import { assertEquals } from 'https://deno.land/std@0.224.0/testing/asserts.ts'
 import { describe, it, beforeAll, afterAll } from 'https://deno.land/std@0.224.0/testing/bdd.ts'
+import { assertStringIncludes } from 'https://deno.land/std@0.224.0/testing/asserts.ts'
 import { Browser, Page, launch } from 'npm:puppeteer@24.9.0'
 import { sleep } from 'https://deno.land/x/sleep/mod.ts'
-// Run the UMD build before serving the page
+
 const stderr = 'inherit'
 const ac = new AbortController()
 
 let browser: Browser
 let page: Page
-
 const port = 8000
-const content = `<html>
-<body>
-    <div id="output"></div>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+const content = `
+<!DOCTYPE html>
+<html>
+  <body>
+    <pre id="log" style="font-family: monospace"></pre>
     <script src="http://localhost:${port}/supabase.js"></script>
+    <script>
+      const log = (msg) => {
+        document.getElementById('log').textContent += msg + "\\n"
+        console.log(msg)
+      }
 
-    <script type="text/babel" data-presets="env,react">
-        const SUPABASE_URL = 'http://127.0.0.1:54321'
-        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
-        const supabase = supabase.createClient(SUPABASE_URL, ANON_KEY)
-        const App = (props) => {
-            const [realtimeStatus, setRealtimeStatus] = React.useState(null)
-            const channel = supabase.channel('realtime:public:todos')
-            React.useEffect(() => {
-                channel.subscribe((status) => { if (status === 'SUBSCRIBED') setRealtimeStatus(status) })
+      const supabase = window.supabase.createClient(
+        'http://127.0.0.1:54321',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+      )
 
-                return () => {
-                    channel.unsubscribe()
-                }
-            }, [])
-            if (realtimeStatus) {
-                return <div id='realtime_status'>{realtimeStatus}</div>
-            } else {
-                return <div></div>
-            }
-        }
-        ReactDOM.render(<App />, document.getElementById('output'));
+      const channel = supabase.channel('realtime:public:todos')
+
+      channel.subscribe((status) => {
+        log('subscribe callback called with: ' + status)
+      })
+
+      setTimeout(() => {
+        log('subscribe callback NOT called (3s timeout)')
+      }, 3000)
     </script>
-</body>
+  </body>
 </html>
 `
 
 beforeAll(async () => {
+  console.log('🚀 Starting supabase, installing, building...')
   await new Deno.Command('supabase', { args: ['start'], stderr }).output()
   await new Deno.Command('npm', { args: ['install'], stderr }).output()
   await new Deno.Command('npm', {
@@ -53,16 +51,10 @@ beforeAll(async () => {
     stderr,
   }).output()
 
-  await new Deno.Command('npx', {
-    args: ['puppeteer', 'browsers', 'install', 'chrome'],
-    stderr,
-  }).output()
-
   serve(
-    async (req: any) => {
+    async (req) => {
       if (req.url.endsWith('supabase.js')) {
         const file = await Deno.readFile('./dist/umd/supabase.js')
-
         return new Response(file, {
           headers: { 'content-type': 'application/javascript' },
         })
@@ -74,29 +66,34 @@ beforeAll(async () => {
         },
       })
     },
-    { signal: ac.signal, port: port }
+    { signal: ac.signal, port }
   )
 })
 
 afterAll(async () => {
   await ac.abort()
-  await page.close()
-  await browser.close()
+  await page?.close()
+  await browser?.close()
   await sleep(1)
 })
 
-describe('Realtime integration test', () => {
+describe('UMD subscribe test', () => {
   beforeAll(async () => {
     browser = await launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     })
     page = await browser.newPage()
+
+    page.on('console', (msg) => console.log('🧪 BROWSER:', msg.text()))
   })
 
-  it('connects to realtime', async () => {
-    await page.goto('http://localhost:8000')
-    await page.waitForSelector('#realtime_status', { timeout: 2000 })
-    const realtimeStatus = await page.$eval('#realtime_status', (el) => el.innerHTML)
-    assertEquals(realtimeStatus, 'SUBSCRIBED')
+  it('should show callback called or not', async () => {
+    await page.goto(`http://localhost:${port}`)
+    await page.waitForSelector('#log', { timeout: 4000 })
+
+    const logContent = await page.$eval('#log', (el) => el.textContent || '')
+
+    // Bug: the callback was not called - let's check it explicitly
+    assertStringIncludes(logContent, 'subscribe callback called with: SUBSCRIBED')
   })
 })
