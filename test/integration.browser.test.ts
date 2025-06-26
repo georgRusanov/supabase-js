@@ -11,7 +11,7 @@ let browser: Browser
 let page: Page
 const port = 8000
 
-const content = `
+const contentUMD = `
 <!DOCTYPE html>
 <html>
   <body>
@@ -23,7 +23,7 @@ const content = `
         console.log(msg)
       }
 
-      log('Starting test...')
+      log('Starting UMD test...')
 
       // Intercept WebSocket constructor
       const originalWebSocket = window.WebSocket
@@ -45,43 +45,82 @@ const content = `
         return originalFetch.apply(this, args)
       }
 
-      // Intercept EventSource (Server-Sent Events)
-      const originalEventSource = window.EventSource
-      let eventSourceCalls = []
+      // Intercept setTimeout/setInterval for polling
+      const originalSetTimeout = window.setTimeout
+      const originalSetInterval = window.setInterval
+      let timeoutCalls = []
+      let intervalCalls = []
       
-      if (window.EventSource) {
-        window.EventSource = function(...args) {
-          eventSourceCalls.push(args[0])
-          log('EventSource called with URL: ' + args[0])
-          return new originalEventSource(...args)
-        }
+      window.setTimeout = function(fn, delay, ...args) {
+        timeoutCalls.push({fn: fn.toString().substring(0, 50), delay})
+        log('setTimeout called with delay: ' + delay)
+        return originalSetTimeout.apply(this, [fn, delay, ...args])
+      }
+      
+      window.setInterval = function(fn, delay, ...args) {
+        intervalCalls.push({fn: fn.toString().substring(0, 50), delay})
+        log('setInterval called with delay: ' + delay)
+        return originalSetInterval.apply(this, [fn, delay, ...args])
       }
 
-      // Intercept Worker creation
-      const originalWorker = window.Worker
-      let workerCalls = []
+      log('Creating Supabase client (UMD)...')
+      const supabase = window.supabase.createClient(
+        'http://127.0.0.1:54321',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+      )
+
+      log('Creating channel...')
+      const channel = supabase.channel('realtime:public:todos')
+
+      log('Subscribing to channel...')
+      channel.subscribe((status) => {
+        log('UMD subscribe callback called with: ' + status)
+      })
+
+      setTimeout(() => {
+        log('UMD WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
+        log('UMD Fetch calls: ' + JSON.stringify(fetchCalls))
+        log('UMD setTimeout calls: ' + JSON.stringify(timeoutCalls))
+        log('UMD setInterval calls: ' + JSON.stringify(intervalCalls))
+      }, 3000)
+    </script>
+  </body>
+</html>
+`
+
+const contentModule = `
+<!DOCTYPE html>
+<html>
+  <body>
+    <pre id="log" style="font-family: monospace"></pre>
+    <script type="module">
+      import { createClient } from 'http://localhost:${port}/supabase-module.js'
       
-      if (window.Worker) {
-        window.Worker = function(...args) {
-          workerCalls.push(args[0])
-          log('Worker created with URL: ' + args[0])
-          return new originalWorker(...args)
-        }
+      const log = (msg) => {
+        document.getElementById('log').textContent += msg + "\\n"
+        console.log(msg)
       }
 
-      // Intercept XMLHttpRequest for potential fallback
-      const originalXHR = window.XMLHttpRequest
-      let xhrCalls = []
+      log('Starting Module test...')
+
+      // Intercept WebSocket constructor
+      const originalWebSocket = window.WebSocket
+      let wsConstructorCalls = []
       
-      window.XMLHttpRequest = function() {
-        const xhr = new originalXHR()
-        const originalOpen = xhr.open
-        xhr.open = function(method, url, ...args) {
-          xhrCalls.push(url)
-          log('XMLHttpRequest opened: ' + method + ' ' + url)
-          return originalOpen.apply(this, [method, url, ...args])
-        }
-        return xhr
+      window.WebSocket = function(...args) {
+        wsConstructorCalls.push(args.length)
+        log('WebSocket constructor called with ' + args.length + ' parameters: ' + JSON.stringify(args))
+        return new originalWebSocket(...args)
+      }
+
+      // Intercept fetch
+      const originalFetch = window.fetch
+      let fetchCalls = []
+      
+      window.fetch = function(...args) {
+        fetchCalls.push(args[0])
+        log('Fetch called with URL: ' + args[0])
+        return originalFetch.apply(this, args)
       }
 
       // Intercept setTimeout/setInterval for polling
@@ -102,8 +141,8 @@ const content = `
         return originalSetInterval.apply(this, [fn, delay, ...args])
       }
 
-      log('Creating Supabase client...')
-      const supabase = window.supabase.createClient(
+      log('Creating Supabase client (Module)...')
+      const supabase = createClient(
         'http://127.0.0.1:54321',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
       )
@@ -111,48 +150,16 @@ const content = `
       log('Creating channel...')
       const channel = supabase.channel('realtime:public:todos')
 
-      // Log channel internals
-      log('Channel type: ' + typeof channel)
-      log('Channel keys: ' + Object.keys(channel || {}))
-      
-      if (channel) {
-        log('Channel topic: ' + (channel.topic || 'undefined'))
-        log('Channel state: ' + (channel.state || 'undefined'))
-        log('Channel joinedOnce: ' + (channel.joinedOnce || 'undefined'))
-      }
-
-      // Log realtime client internals
-      log('Realtime client type: ' + typeof supabase.realtime)
-      log('Realtime client keys: ' + Object.keys(supabase.realtime || {}))
-      
-      if (supabase.realtime) {
-        log('Realtime transport: ' + (supabase.realtime.transport || 'undefined'))
-        log('Realtime connection state: ' + (supabase.realtime.connectionState ? supabase.realtime.connectionState() : 'undefined'))
-        log('Realtime is connected: ' + (supabase.realtime.isConnected ? supabase.realtime.isConnected() : 'undefined'))
-      }
-
       log('Subscribing to channel...')
       channel.subscribe((status) => {
-        log('subscribe callback called with: ' + status)
-        
-        // Check connection state after subscription
-        setTimeout(() => {
-          log('After subscription - Realtime transport: ' + (supabase.realtime.transport || 'undefined'))
-          log('After subscription - Realtime connection state: ' + (supabase.realtime.connectionState ? supabase.realtime.connectionState() : 'undefined'))
-          log('After subscription - Realtime is connected: ' + (supabase.realtime.isConnected ? supabase.realtime.isConnected() : 'undefined'))
-          log('After subscription - Realtime conn: ' + (supabase.realtime.conn ? 'exists' : 'null'))
-        }, 1000)
+        log('Module subscribe callback called with: ' + status)
       })
 
       setTimeout(() => {
-        log('WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
-        log('Fetch calls: ' + JSON.stringify(fetchCalls))
-        log('EventSource calls: ' + JSON.stringify(eventSourceCalls))
-        log('Worker calls: ' + JSON.stringify(workerCalls))
-        log('XMLHttpRequest calls: ' + JSON.stringify(xhrCalls))
-        log('setTimeout calls: ' + JSON.stringify(timeoutCalls))
-        log('setInterval calls: ' + JSON.stringify(intervalCalls))
-        log('Final log content: ' + document.getElementById('log').textContent)
+        log('Module WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
+        log('Module Fetch calls: ' + JSON.stringify(fetchCalls))
+        log('Module setTimeout calls: ' + JSON.stringify(timeoutCalls))
+        log('Module setInterval calls: ' + JSON.stringify(intervalCalls))
       }, 3000)
     </script>
   </body>
@@ -176,7 +183,7 @@ beforeAll(async () => {
           headers: { 'content-type': 'application/javascript' },
         })
       }
-      return new Response(content, {
+      return new Response(contentUMD, {
         headers: {
           'content-type': 'text/html',
           'cache-control': 'no-cache',
@@ -184,6 +191,25 @@ beforeAll(async () => {
       })
     },
     { signal: ac.signal, port }
+  )
+
+  // Start second server for module test
+  serve(
+    async (req) => {
+      if (req.url.endsWith('supabase-module.js')) {
+        const file = await Deno.readFile('./dist/module/index.js')
+        return new Response(file, {
+          headers: { 'content-type': 'application/javascript' },
+        })
+      }
+      return new Response(contentModule, {
+        headers: {
+          'content-type': 'text/html',
+          'cache-control': 'no-cache',
+        },
+      })
+    },
+    { signal: ac.signal, port: port + 1 }
   )
 })
 
@@ -211,8 +237,8 @@ describe('UMD subscribe test', () => {
     const logContent = await page.$eval('#log', (el) => el.textContent || '')
     console.log('Full log content:', logContent)
 
-    assertStringIncludes(logContent, 'Starting test...')
-    assertStringIncludes(logContent, 'Creating Supabase client...')
+    assertStringIncludes(logContent, 'Starting UMD test...')
+    assertStringIncludes(logContent, 'Creating Supabase client (UMD)...')
     assertStringIncludes(logContent, 'Creating channel...')
     assertStringIncludes(logContent, 'Subscribing to channel...')
 
@@ -228,24 +254,6 @@ describe('UMD subscribe test', () => {
       console.log('No HTTP requests detected')
     }
 
-    if (logContent.includes('EventSource called with URL:')) {
-      console.log('Server-Sent Events were used (EventSource detected)')
-    } else {
-      console.log('No Server-Sent Events detected')
-    }
-
-    if (logContent.includes('Worker created with URL:')) {
-      console.log('Web Worker was created')
-    } else {
-      console.log('No Web Worker detected')
-    }
-
-    if (logContent.includes('XMLHttpRequest opened:')) {
-      console.log('XMLHttpRequest was used (XMLHttpRequest detected)')
-    } else {
-      console.log('No XMLHttpRequest detected')
-    }
-
     if (logContent.includes('setTimeout called with delay:')) {
       console.log('setTimeout was used (setTimeout detected)')
     } else {
@@ -258,6 +266,45 @@ describe('UMD subscribe test', () => {
       console.log('No setInterval detected')
     }
 
-    assertStringIncludes(logContent, 'subscribe callback called with: SUBSCRIBED')
+    assertStringIncludes(logContent, 'UMD subscribe callback called with: SUBSCRIBED')
+  })
+
+  it('should test module version', async () => {
+    await page.goto(`http://localhost:${port + 1}`)
+    await page.waitForSelector('#log', { timeout: 4000 })
+
+    const logContent = await page.$eval('#log', (el) => el.textContent || '')
+    console.log('Module test log content:', logContent)
+
+    assertStringIncludes(logContent, 'Starting Module test...')
+    assertStringIncludes(logContent, 'Creating Supabase client (Module)...')
+    assertStringIncludes(logContent, 'Creating channel...')
+    assertStringIncludes(logContent, 'Subscribing to channel...')
+
+    if (logContent.includes('WebSocket constructor called')) {
+      console.log('Module: WebSocket constructor was called')
+    } else {
+      console.log('Module: WebSocket constructor was NOT called')
+    }
+
+    if (logContent.includes('Fetch called with URL:')) {
+      console.log('Module: HTTP requests were made (fetch calls detected)')
+    } else {
+      console.log('Module: No HTTP requests detected')
+    }
+
+    if (logContent.includes('setTimeout called with delay:')) {
+      console.log('Module: setTimeout was used (setTimeout detected)')
+    } else {
+      console.log('Module: No setTimeout detected')
+    }
+
+    if (logContent.includes('setInterval called with delay:')) {
+      console.log('Module: setInterval was used (setInterval detected)')
+    } else {
+      console.log('Module: No setInterval detected')
+    }
+
+    assertStringIncludes(logContent, 'Module subscribe callback called with: SUBSCRIBED')
   })
 })
