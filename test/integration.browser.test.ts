@@ -35,6 +35,16 @@ const content = `
         return new originalWebSocket(...args)
       }
 
+      // Intercept fetch to see if HTTP requests are made
+      const originalFetch = window.fetch
+      let fetchCalls = []
+      
+      window.fetch = function(...args) {
+        fetchCalls.push(args[0])
+        log('Fetch called with URL: ' + args[0])
+        return originalFetch.apply(this, args)
+      }
+
       log('Creating Supabase client...')
       const supabase = window.supabase.createClient(
         'http://127.0.0.1:54321',
@@ -51,6 +61,7 @@ const content = `
 
       setTimeout(() => {
         log('WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
+        log('Fetch calls: ' + JSON.stringify(fetchCalls))
         log('Final log content: ' + document.getElementById('log').textContent)
       }, 3000)
     </script>
@@ -119,6 +130,12 @@ describe('UMD subscribe test', () => {
       console.log('WebSocket constructor was called')
     } else {
       console.log('WebSocket constructor was NOT called')
+    }
+
+    if (logContent.includes('Fetch called with URL:')) {
+      console.log('HTTP requests were made (fetch calls detected)')
+    } else {
+      console.log('No HTTP requests detected')
     }
 
     assertStringIncludes(logContent, 'subscribe callback called with: SUBSCRIBED')
