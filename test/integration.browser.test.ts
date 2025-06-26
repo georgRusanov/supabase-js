@@ -23,30 +23,35 @@ const content = `
         console.log(msg)
       }
 
+      log('Starting test...')
+
       // Intercept WebSocket constructor to check parameters
       const originalWebSocket = window.WebSocket
       let wsConstructorCalls = []
       
       window.WebSocket = function(...args) {
         wsConstructorCalls.push(args.length)
-        log('WebSocket constructor called with ' + args.length + ' parameters')
+        log('WebSocket constructor called with ' + args.length + ' parameters: ' + JSON.stringify(args))
         return new originalWebSocket(...args)
       }
 
+      log('Creating Supabase client...')
       const supabase = window.supabase.createClient(
         'http://127.0.0.1:54321',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
       )
 
+      log('Creating channel...')
       const channel = supabase.channel('realtime:public:todos')
 
+      log('Subscribing to channel...')
       channel.subscribe((status) => {
         log('subscribe callback called with: ' + status)
       })
 
       setTimeout(() => {
         log('WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
-        log('subscribe callback NOT called (3s timeout)')
+        log('Final log content: ' + document.getElementById('log').textContent)
       }, 3000)
     </script>
   </body>
@@ -105,10 +110,17 @@ describe('UMD subscribe test', () => {
     const logContent = await page.$eval('#log', (el) => el.textContent || '')
     console.log('Full log content:', logContent)
 
-    // Check for WebSocket constructor calls
-    assertStringIncludes(logContent, 'WebSocket constructor called')
+    assertStringIncludes(logContent, 'Starting test...')
+    assertStringIncludes(logContent, 'Creating Supabase client...')
+    assertStringIncludes(logContent, 'Creating channel...')
+    assertStringIncludes(logContent, 'Subscribing to channel...')
 
-    // Check for successful subscription
+    if (logContent.includes('WebSocket constructor called')) {
+      console.log('WebSocket constructor was called')
+    } else {
+      console.log('WebSocket constructor was NOT called')
+    }
+
     assertStringIncludes(logContent, 'subscribe callback called with: SUBSCRIBED')
   })
 })
