@@ -103,8 +103,12 @@ describe('UMD subscribe test', () => {
     await page.waitForSelector('#log', { timeout: 4000 })
 
     const logContent = await page.$eval('#log', (el) => el.textContent || '')
+    console.log('Full log content:', logContent)
 
-    // Bug: the callback was not called - let's check it explicitly
+    // Check for WebSocket constructor calls
+    assertStringIncludes(logContent, 'WebSocket constructor called')
+
+    // Check for successful subscription
     assertStringIncludes(logContent, 'subscribe callback called with: SUBSCRIBED')
   })
 })
