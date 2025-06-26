@@ -78,6 +78,16 @@ const content = `
       log('Creating channel...')
       const channel = supabase.channel('realtime:public:todos')
 
+      // Log realtime client internals
+      log('Realtime client type: ' + typeof supabase.realtime)
+      log('Realtime client keys: ' + Object.keys(supabase.realtime || {}))
+      
+      if (supabase.realtime) {
+        log('Realtime transport: ' + (supabase.realtime.transport || 'undefined'))
+        log('Realtime connection state: ' + (supabase.realtime.connectionState ? supabase.realtime.connectionState() : 'undefined'))
+        log('Realtime is connected: ' + (supabase.realtime.isConnected ? supabase.realtime.isConnected() : 'undefined'))
+      }
+
       log('Subscribing to channel...')
       channel.subscribe((status) => {
         log('subscribe callback called with: ' + status)
