@@ -25,7 +25,7 @@ const content = `
 
       log('Starting test...')
 
-      // Intercept WebSocket constructor to check parameters
+      // Intercept WebSocket constructor
       const originalWebSocket = window.WebSocket
       let wsConstructorCalls = []
       
@@ -35,7 +35,7 @@ const content = `
         return new originalWebSocket(...args)
       }
 
-      // Intercept fetch to see if HTTP requests are made
+      // Intercept fetch
       const originalFetch = window.fetch
       let fetchCalls = []
       
@@ -43,6 +43,30 @@ const content = `
         fetchCalls.push(args[0])
         log('Fetch called with URL: ' + args[0])
         return originalFetch.apply(this, args)
+      }
+
+      // Intercept EventSource (Server-Sent Events)
+      const originalEventSource = window.EventSource
+      let eventSourceCalls = []
+      
+      if (window.EventSource) {
+        window.EventSource = function(...args) {
+          eventSourceCalls.push(args[0])
+          log('EventSource called with URL: ' + args[0])
+          return new originalEventSource(...args)
+        }
+      }
+
+      // Intercept Worker creation
+      const originalWorker = window.Worker
+      let workerCalls = []
+      
+      if (window.Worker) {
+        window.Worker = function(...args) {
+          workerCalls.push(args[0])
+          log('Worker created with URL: ' + args[0])
+          return new originalWorker(...args)
+        }
       }
 
       log('Creating Supabase client...')
@@ -62,6 +86,8 @@ const content = `
       setTimeout(() => {
         log('WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
         log('Fetch calls: ' + JSON.stringify(fetchCalls))
+        log('EventSource calls: ' + JSON.stringify(eventSourceCalls))
+        log('Worker calls: ' + JSON.stringify(workerCalls))
         log('Final log content: ' + document.getElementById('log').textContent)
       }, 3000)
     </script>
@@ -136,6 +162,18 @@ describe('UMD subscribe test', () => {
       console.log('HTTP requests were made (fetch calls detected)')
     } else {
       console.log('No HTTP requests detected')
+    }
+
+    if (logContent.includes('EventSource called with URL:')) {
+      console.log('Server-Sent Events were used (EventSource detected)')
+    } else {
+      console.log('No Server-Sent Events detected')
+    }
+
+    if (logContent.includes('Worker created with URL:')) {
+      console.log('Web Worker was created')
+    } else {
+      console.log('No Web Worker detected')
     }
 
     assertStringIncludes(logContent, 'subscribe callback called with: SUBSCRIBED')
