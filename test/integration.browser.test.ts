@@ -23,6 +23,16 @@ const content = `
         console.log(msg)
       }
 
+      // Intercept WebSocket constructor to check parameters
+      const originalWebSocket = window.WebSocket
+      let wsConstructorCalls = []
+      
+      window.WebSocket = function(...args) {
+        wsConstructorCalls.push(args.length)
+        log('WebSocket constructor called with ' + args.length + ' parameters')
+        return new originalWebSocket(...args)
+      }
+
       const supabase = window.supabase.createClient(
         'http://127.0.0.1:54321',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
@@ -35,6 +45,7 @@ const content = `
       })
 
       setTimeout(() => {
+        log('WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
         log('subscribe callback NOT called (3s timeout)')
       }, 3000)
     </script>
