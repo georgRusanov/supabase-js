@@ -93,7 +93,8 @@ const contentModule = `
 <html>
   <body>
     <pre id="log" style="font-family: monospace"></pre>
-    <script type="module">
+    <script src="http://localhost:${port}/supabase.js"></script>
+    <script>
       const log = (msg) => {
         document.getElementById('log').textContent += msg + "\\n"
         console.log(msg)
@@ -113,17 +114,16 @@ const contentModule = `
       })
 
       try {
-        log('Attempting to import createClient...')
+        log('Attempting to access createClient...')
         
-        // Test if the module URL is accessible
-        const response = await fetch('http://localhost:${port + 1}/supabase-module.js')
-        if (!response.ok) {
-          throw new Error('Failed to fetch module: ' + response.status + ' ' + response.statusText)
+        // Check if supabase is available
+        if (typeof window.supabase === 'undefined') {
+          throw new Error('window.supabase is not defined')
         }
-        log('Module fetch successful, status: ' + response.status)
+        log('Supabase UMD loaded successfully')
         
-        const { createClient } = await import('http://localhost:${port + 1}/supabase-module.js')
-        log('Import successful!')
+        const { createClient } = window.supabase
+        log('createClient function available')
 
         // Intercept WebSocket constructor
         const originalWebSocket = window.WebSocket
@@ -201,19 +201,24 @@ beforeAll(async () => {
     args: ['run', 'build:umd', '--', '--mode', 'production'],
     stderr,
   }).output()
-  await new Deno.Command('npm', {
-    args: ['run', 'build:module'],
-    stderr,
-  }).output()
 
   serve(
     async (req) => {
-      console.log('UMD server request:', req.url)
+      console.log('Server request:', req.url)
       if (req.url.endsWith('supabase.js')) {
         console.log('Serving supabase.js')
         const file = await Deno.readFile('./dist/umd/supabase.js')
         return new Response(file, {
           headers: { 'content-type': 'application/javascript' },
+        })
+      }
+      if (req.url.includes('module')) {
+        console.log('Serving module HTML')
+        return new Response(contentModule, {
+          headers: {
+            'content-type': 'text/html',
+            'cache-control': 'no-cache',
+          },
         })
       }
       console.log('Serving UMD HTML')
@@ -225,31 +230,6 @@ beforeAll(async () => {
       })
     },
     { signal: ac.signal, port }
-  )
-
-  // Second server for module test
-  serve(
-    async (req) => {
-      console.log('Module server request:', req.url)
-      if (req.url.endsWith('supabase-module.js')) {
-        console.log('Serving supabase-module.js')
-        const file = await Deno.readFile('./dist/module/index.js')
-        return new Response(file, {
-          headers: {
-            'content-type': 'application/javascript',
-            'Access-Control-Allow-Origin': '*',
-          },
-        })
-      }
-      console.log('Serving module HTML')
-      return new Response(contentModule, {
-        headers: {
-          'content-type': 'text/html',
-          'cache-control': 'no-cache',
-        },
-      })
-    },
-    { signal: ac.signal, port: port + 1 }
   )
 })
 
@@ -310,7 +290,7 @@ describe('UMD subscribe test', () => {
   })
 
   it('should test module version', async () => {
-    await page.goto(`http://localhost:${port + 1}`)
+    await page.goto(`http://localhost:${port}/module`)
     await page.waitForSelector('#log', { timeout: 4000 })
 
     const logContent = await page.$eval('#log', (el) => el.textContent || '')
