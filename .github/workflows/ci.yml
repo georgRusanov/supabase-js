@@ -75,6 +75,7 @@ jobs:
         if: ${{ matrix.deno == '2.x' }}
         run: |
           npm run test:integration:browser
+          npm run test:websocket:deno
 
       - name: Stop Supabase
         run: supabase stop
@@ -157,6 +158,33 @@ jobs:
           npm install "../../../$PKG"
           npm install
           npm test || npm test
+
+      - name: Stop Supabase
+        run: supabase stop
+
+  websocket-browser-tests:
+    name: WebSocket Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install Playwright browsers and dependencies
+        run: npx playwright install --with-deps
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Run WebSocket tests
+        run: |
+          npm clean-install
+          npm run build
+          npm run test:websocket:playwright
 
       - name: Stop Supabase
         run: supabase stop
