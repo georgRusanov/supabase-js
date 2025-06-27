@@ -34,6 +34,17 @@
         const { createClient } = window.supabase
         log('createClient function available')
 
+        // Log realtime-js version if available
+        try {
+          if (window.supabase.realtime && window.supabase.realtime.version) {
+            log('Realtime-js version: ' + window.supabase.realtime.version)
+          } else {
+            log('Realtime-js version: not available')
+          }
+        } catch (e) {
+          log('Could not get realtime-js version: ' + e.message)
+        }
+
         // Intercept WebSocket constructor
         const originalWebSocket = window.WebSocket
         let wsConstructorCalls = []

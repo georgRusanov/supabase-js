@@ -182,7 +182,13 @@ jobs:
       - name: Run WebSocket tests
         run: |
           npm clean-install
+          npm run clean
           npm run build
+          echo "=== Checking realtime-js version ==="
+          npm list @supabase/realtime-js
+          echo "=== UMD file info ==="
+          ls -la dist/umd/
+          echo "=== Running WebSocket tests ==="
           cd test/integration/websocket
           npm install
           cp ../../../dist/umd/supabase.js .
