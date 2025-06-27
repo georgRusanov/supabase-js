@@ -44,12 +44,5 @@
     "overrides": {
       "@supabase/supabase-js": "file:../../../"
     }
-  },
-  "overrides": {
-    "@supabase/supabase-js": "file:../../../",
-    "@supabase/realtime-js": "2.11.13"
-  },
-  "resolutions": {
-    "@supabase/realtime-js": "2.11.13"
   }
 }

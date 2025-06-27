@@ -87,7 +87,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: false
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -99,12 +99,9 @@ jobs:
         run: |
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
-          # Force install specific version of realtime-js
-          npm install @supabase/realtime-js@2.11.13 --save-exact
-          # Aggressive cache cleaning to ensure we use package-lock.json version
+          # Clean cache to ensure we use current package-lock.json
           npm cache clean --force
           rm -rf node_modules
-          rm -rf ~/.npm
           npm clean-install
           npm run build
           npm run test:integration || npm run test:integration
@@ -183,7 +180,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: false
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -196,32 +193,15 @@ jobs:
 
       - name: Run WebSocket tests
         run: |
-          echo "=== Initial package-lock.json realtime-js version ==="
-          grep -A 2 -B 2 "realtime-js" package-lock.json
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
-          # Force install specific version of realtime-js
-          npm install @supabase/realtime-js@2.11.13 --save-exact
-          echo "=== After npm install --save-exact ==="
-          grep -A 2 -B 2 "realtime-js" package-lock.json
-          # Aggressive cache cleaning to ensure we use package-lock.json version
+          # Clean cache to ensure we use current package-lock.json
           npm cache clean --force
           rm -rf node_modules
-          rm -rf ~/.npm
           npm clean-install
-          echo "=== After npm clean-install ==="
-          grep -A 2 -B 2 "realtime-js" package-lock.json
           npm run build
           echo "=== Checking realtime-js version ==="
           npm list @supabase/realtime-js
-          echo "=== Checking package-lock.json ==="
-          grep -A 5 -B 5 "realtime-js" package-lock.json
-          echo "=== Checking all realtime-js versions in node_modules ==="
-          find node_modules -name "package.json" -exec grep -l "realtime-js" {} \; | head -10
-          echo "=== Checking why realtime-js 2.11.15 is installed ==="
-          npm ls @supabase/realtime-js --depth=10
-          echo "=== UMD file info ==="
-          ls -la dist/umd/
           echo "=== Running WebSocket tests ==="
           cd test/integration/websocket
           npm install
