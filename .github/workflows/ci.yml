@@ -185,7 +185,7 @@ jobs:
           npm run build
           cd test/integration/websocket
           npm install
-          cp ../../dist/umd/supabase.js .
+          cp ../../../dist/umd/supabase.js .
           npm run test
 
       - name: Stop Supabase
