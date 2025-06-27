@@ -104,6 +104,18 @@ jobs:
           npm cache clean --force
           rm -rf node_modules
           npm clean-install
+          echo "=== Checking installed realtime-js package.json ==="
+          cat node_modules/@supabase/realtime-js/package.json | grep -A 5 -B 5 version
+          echo "=== Checking all @supabase packages in node_modules ==="
+          find node_modules/@supabase -name "package.json" -exec grep -l "realtime-js" {} \;
+          echo "=== Checking npm ls output ==="
+          npm ls @supabase/realtime-js --depth=10
+          echo "=== Checking npm audit ==="
+          npm audit --audit-level=low
+          echo "=== Checking npm outdated ==="
+          npm outdated @supabase/realtime-js
+          echo "=== Checking npm why realtime-js ==="
+          npm why @supabase/realtime-js
           npm run build
           npm run test:integration || npm run test:integration
 
@@ -193,17 +205,58 @@ jobs:
 
       - name: Run WebSocket tests
         run: |
+          echo "=== Initial package.json realtime-js version ==="
+          grep -A 2 -B 2 "realtime-js" package.json
+          echo "=== Initial package-lock.json realtime-js version ==="
+          grep -A 2 -B 2 "realtime-js" package-lock.json
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
           # Force update package-lock.json to match package.json
-          npm install --package-lock-only
+          echo "=== Running npm install --package-lock-only ==="
+          npm install --package-lock-only --verbose
+          echo "=== After npm install --package-lock-only ==="
+          grep -A 2 -B 2 "realtime-js" package-lock.json
+          echo "=== After npm clean-install ==="
+          grep -A 2 -B 2 "realtime-js" package-lock.json
+          echo "=== Checking if other @supabase packages require realtime-js ==="
+          npm view @supabase/auth-js@2.70.0 dependencies
+          npm view @supabase/auth-js@2.70.0 peerDependencies
+          npm view @supabase/functions-js@2.4.4 dependencies
+          npm view @supabase/functions-js@2.4.4 peerDependencies
+          npm view @supabase/postgrest-js@1.19.4 dependencies
+          npm view @supabase/postgrest-js@1.19.4 peerDependencies
+          npm view @supabase/storage-js@2.7.1 dependencies
+          npm view @supabase/storage-js@2.7.1 peerDependencies
+          echo "=== Checking available realtime-js versions ==="
+          npm view @supabase/realtime-js versions --json | tail -10
+          echo "=== Checking realtime-js latest version ==="
+          npm view @supabase/realtime-js version
+          echo "=== Checking npm resolution with --dry-run ==="
+          npm install --dry-run | grep realtime-js
+          echo "=== Running npm install --package-lock-only with maximum verbosity ==="
+          npm install --package-lock-only --loglevel=verbose
+          echo "=== Checking npm cache info ==="
+          npm cache verify
+          echo "=== Checking npm config ==="
+          npm config list
+          echo "=== Checking npm registry info ==="
+          npm config get registry
           # Clean cache to ensure we use current package-lock.json
           npm cache clean --force
           rm -rf node_modules
           npm clean-install
-          npm run build
-          echo "=== Checking realtime-js version ==="
-          npm list @supabase/realtime-js
+          echo "=== Checking installed realtime-js package.json ==="
+          cat node_modules/@supabase/realtime-js/package.json | grep -A 5 -B 5 version
+          echo "=== Checking all @supabase packages in node_modules ==="
+          find node_modules/@supabase -name "package.json" -exec grep -l "realtime-js" {} \;
+          echo "=== Checking npm ls output ==="
+          npm ls @supabase/realtime-js --depth=10
+          echo "=== Checking npm audit ==="
+          npm audit --audit-level=low
+          echo "=== Checking npm outdated ==="
+          npm outdated @supabase/realtime-js
+          echo "=== Checking npm why realtime-js ==="
+          npm why @supabase/realtime-js
           echo "=== Running WebSocket tests ==="
           cd test/integration/websocket
           npm install
