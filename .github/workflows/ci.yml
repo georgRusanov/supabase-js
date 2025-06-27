@@ -97,6 +97,8 @@ jobs:
 
       - name: Run integration tests
         run: |
+          # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
+          rm -f pnpm-lock.yaml
           # Aggressive cache cleaning to ensure we use package-lock.json version
           npm cache clean --force
           rm -rf node_modules
@@ -192,6 +194,8 @@ jobs:
 
       - name: Run WebSocket tests
         run: |
+          # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
+          rm -f pnpm-lock.yaml
           # Aggressive cache cleaning to ensure we use package-lock.json version
           npm cache clean --force
           rm -rf node_modules
@@ -200,6 +204,12 @@ jobs:
           npm run build
           echo "=== Checking realtime-js version ==="
           npm list @supabase/realtime-js
+          echo "=== Checking package-lock.json ==="
+          grep -A 5 -B 5 "realtime-js" package-lock.json
+          echo "=== Checking all realtime-js versions in node_modules ==="
+          find node_modules -name "package.json" -exec grep -l "realtime-js" {} \; | head -10
+          echo "=== Checking why realtime-js 2.11.15 is installed ==="
+          npm ls @supabase/realtime-js --depth=10
           echo "=== UMD file info ==="
           ls -la dist/umd/
           echo "=== Running WebSocket tests ==="
