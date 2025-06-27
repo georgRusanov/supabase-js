@@ -94,8 +94,6 @@ const contentModule = `
   <body>
     <pre id="log" style="font-family: monospace"></pre>
     <script type="module">
-      import { createClient } from 'http://localhost:${port + 1}/supabase-module.js'
-      
       const log = (msg) => {
         document.getElementById('log').textContent += msg + "\\n"
         console.log(msg)
@@ -103,64 +101,93 @@ const contentModule = `
 
       log('Starting Module test...')
 
-      // Intercept WebSocket constructor
-      const originalWebSocket = window.WebSocket
-      let wsConstructorCalls = []
-      
-      window.WebSocket = function(...args) {
-        wsConstructorCalls.push(args.length)
-        log('WebSocket constructor called with ' + args.length + ' parameters: ' + JSON.stringify(args))
-        return new originalWebSocket(...args)
-      }
-
-      // Intercept fetch
-      const originalFetch = window.fetch
-      let fetchCalls = []
-      
-      window.fetch = function(...args) {
-        fetchCalls.push(args[0])
-        log('Fetch called with URL: ' + args[0])
-        return originalFetch.apply(this, args)
-      }
-
-      // Intercept setTimeout/setInterval for polling
-      const originalSetTimeout = window.setTimeout
-      const originalSetInterval = window.setInterval
-      let timeoutCalls = []
-      let intervalCalls = []
-      
-      window.setTimeout = function(fn, delay, ...args) {
-        timeoutCalls.push({fn: fn.toString().substring(0, 50), delay})
-        log('setTimeout called with delay: ' + delay)
-        return originalSetTimeout.apply(this, [fn, delay, ...args])
-      }
-      
-      window.setInterval = function(fn, delay, ...args) {
-        intervalCalls.push({fn: fn.toString().substring(0, 50), delay})
-        log('setInterval called with delay: ' + delay)
-        return originalSetInterval.apply(this, [fn, delay, ...args])
-      }
-
-      log('Creating Supabase client (Module)...')
-      const supabase = createClient(
-        'http://127.0.0.1:54321',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
-      )
-
-      log('Creating channel...')
-      const channel = supabase.channel('realtime:public:todos')
-
-      log('Subscribing to channel...')
-      channel.subscribe((status) => {
-        log('Module subscribe callback called with: ' + status)
+      // Add global error handler
+      window.addEventListener('error', (event) => {
+        log('Global error: ' + event.message)
+        log('Error source: ' + event.filename + ':' + event.lineno)
       })
 
-      setTimeout(() => {
-        log('Module WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
-        log('Module Fetch calls: ' + JSON.stringify(fetchCalls))
-        log('Module setTimeout calls: ' + JSON.stringify(timeoutCalls))
-        log('Module setInterval calls: ' + JSON.stringify(intervalCalls))
-      }, 3000)
+      // Add unhandled promise rejection handler
+      window.addEventListener('unhandledrejection', (event) => {
+        log('Unhandled promise rejection: ' + event.reason)
+      })
+
+      try {
+        log('Attempting to import createClient...')
+        
+        // Test if the module URL is accessible
+        const response = await fetch('http://localhost:${port + 1}/supabase-module.js')
+        if (!response.ok) {
+          throw new Error('Failed to fetch module: ' + response.status + ' ' + response.statusText)
+        }
+        log('Module fetch successful, status: ' + response.status)
+        
+        const { createClient } = await import('http://localhost:${port + 1}/supabase-module.js')
+        log('Import successful!')
+
+        // Intercept WebSocket constructor
+        const originalWebSocket = window.WebSocket
+        let wsConstructorCalls = []
+        
+        window.WebSocket = function(...args) {
+          wsConstructorCalls.push(args.length)
+          log('WebSocket constructor called with ' + args.length + ' parameters: ' + JSON.stringify(args))
+          return new originalWebSocket(...args)
+        }
+
+        // Intercept fetch
+        const originalFetch = window.fetch
+        let fetchCalls = []
+        
+        window.fetch = function(...args) {
+          fetchCalls.push(args[0])
+          log('Fetch called with URL: ' + args[0])
+          return originalFetch.apply(this, args)
+        }
+
+        // Intercept setTimeout/setInterval for polling
+        const originalSetTimeout = window.setTimeout
+        const originalSetInterval = window.setInterval
+        let timeoutCalls = []
+        let intervalCalls = []
+        
+        window.setTimeout = function(fn, delay, ...args) {
+          timeoutCalls.push({fn: fn.toString().substring(0, 50), delay})
+          log('setTimeout called with delay: ' + delay)
+          return originalSetTimeout.apply(this, [fn, delay, ...args])
+        }
+        
+        window.setInterval = function(fn, delay, ...args) {
+          intervalCalls.push({fn: fn.toString().substring(0, 50), delay})
+          log('setInterval called with delay: ' + delay)
+          return originalSetInterval.apply(this, [fn, delay, ...args])
+        }
+
+        log('Creating Supabase client (Module)...')
+        const supabase = createClient(
+          'http://127.0.0.1:54321',
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+        )
+
+        log('Creating channel...')
+        const channel = supabase.channel('realtime:public:todos')
+
+        log('Subscribing to channel...')
+        channel.subscribe((status) => {
+          log('Module subscribe callback called with: ' + status)
+        })
+
+        setTimeout(() => {
+          log('Module WebSocket calls: ' + JSON.stringify(wsConstructorCalls))
+          log('Module Fetch calls: ' + JSON.stringify(fetchCalls))
+          log('Module setTimeout calls: ' + JSON.stringify(timeoutCalls))
+          log('Module setInterval calls: ' + JSON.stringify(intervalCalls))
+        }, 3000)
+      } catch (error) {
+        log('Error in module test: ' + error.message)
+        log('Error stack: ' + error.stack)
+        log('Error name: ' + error.name)
+      }
     </script>
   </body>
 </html>
@@ -174,15 +201,22 @@ beforeAll(async () => {
     args: ['run', 'build:umd', '--', '--mode', 'production'],
     stderr,
   }).output()
+  await new Deno.Command('npm', {
+    args: ['run', 'build:module'],
+    stderr,
+  }).output()
 
   serve(
     async (req) => {
+      console.log('UMD server request:', req.url)
       if (req.url.endsWith('supabase.js')) {
+        console.log('Serving supabase.js')
         const file = await Deno.readFile('./dist/umd/supabase.js')
         return new Response(file, {
           headers: { 'content-type': 'application/javascript' },
         })
       }
+      console.log('Serving UMD HTML')
       return new Response(contentUMD, {
         headers: {
           'content-type': 'text/html',
@@ -193,10 +227,12 @@ beforeAll(async () => {
     { signal: ac.signal, port }
   )
 
-  // Start second server for module test
+  // Second server for module test
   serve(
     async (req) => {
+      console.log('Module server request:', req.url)
       if (req.url.endsWith('supabase-module.js')) {
+        console.log('Serving supabase-module.js')
         const file = await Deno.readFile('./dist/module/index.js')
         return new Response(file, {
           headers: {
@@ -205,6 +241,7 @@ beforeAll(async () => {
           },
         })
       }
+      console.log('Serving module HTML')
       return new Response(contentModule, {
         headers: {
           'content-type': 'text/html',
