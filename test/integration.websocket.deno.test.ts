@@ -1,15 +1,15 @@
+import { assertEquals, assertStringIncludes } from 'https://deno.land/std@0.220.1/assert/mod.ts'
 import { serve } from 'https://deno.land/std@0.192.0/http/server.ts'
 import { describe, it, beforeAll, afterAll } from 'https://deno.land/std@0.224.0/testing/bdd.ts'
-import { assertStringIncludes } from 'https://deno.land/std@0.224.0/testing/asserts.ts'
-import { launch, type Browser, type Page } from 'npm:puppeteer@24.9.0'
 import { sleep } from 'https://deno.land/x/sleep/mod.ts'
+import puppeteer, { Browser, Page } from 'npm:puppeteer@24.9.0'
 
-const port = 8003
+const port = 3002
 const ac = new AbortController()
 let browser: Browser | undefined
 let page: Page | undefined
 
-const stderr = { stderr: 'inherit' } as const
+const stderr = 'inherit' as const
 
 const contentWebSocket = `
 <!DOCTYPE html>
@@ -122,47 +122,38 @@ const contentWebSocket = `
 </html>
 `
 
-beforeAll(async () => {
-  console.log('🚀 Starting supabase, installing, building...')
-  await new Deno.Command('supabase', { args: ['start'], stderr }).output()
-  await new Deno.Command('npm', { args: ['install'], stderr }).output()
-  await new Deno.Command('npm', {
-    args: ['run', 'build:umd', '--', '--mode', 'production'],
-    stderr,
-  }).output()
-
-  serve(
-    async (req) => {
-      console.log('WebSocket Deno server request:', req.url)
-      if (req.url.endsWith('supabase.js')) {
-        console.log('Serving supabase.js')
-        const file = await Deno.readFile('./dist/umd/supabase.js')
-        return new Response(file, {
-          headers: { 'content-type': 'application/javascript' },
-        })
-      }
-      console.log('Serving WebSocket HTML')
-      return new Response(contentWebSocket, {
-        headers: {
-          'content-type': 'text/html',
-          'cache-control': 'no-cache',
-        },
-      })
-    },
-    { signal: ac.signal, port }
-  )
-})
-
-afterAll(async () => {
-  await ac.abort()
-  await page?.close()
-  await browser?.close()
-  await sleep(1)
-})
-
 describe('WebSocket Browser Tests (Deno)', () => {
   beforeAll(async () => {
-    browser = await launch({
+    console.log('🚀 Starting supabase, installing, building...')
+    await new Deno.Command('supabase', { args: ['start'], stderr }).output()
+    await new Deno.Command('npm', { args: ['install'], stderr }).output()
+    await new Deno.Command('npm', {
+      args: ['run', 'build:umd', '--', '--mode', 'production'],
+      stderr,
+    }).output()
+
+    serve(
+      async (req) => {
+        console.log('WebSocket Deno server request:', req.url)
+        if (req.url.endsWith('supabase.js')) {
+          console.log('Serving supabase.js')
+          const file = await Deno.readFile('./dist/umd/supabase.js')
+          return new Response(file, {
+            headers: { 'content-type': 'application/javascript' },
+          })
+        }
+        console.log('Serving WebSocket HTML')
+        return new Response(contentWebSocket, {
+          headers: {
+            'content-type': 'text/html',
+            'cache-control': 'no-cache',
+          },
+        })
+      },
+      { signal: ac.signal, port }
+    )
+
+    browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     })
     page = await browser.newPage()
@@ -170,7 +161,18 @@ describe('WebSocket Browser Tests (Deno)', () => {
     page.on('console', (msg) => console.log('🧪 BROWSER (Deno):', msg.text()))
   })
 
+  afterAll(async () => {
+    await ac.abort()
+    await page?.close()
+    await browser?.close()
+    await sleep(1)
+  })
+
   it('should test WebSocket transport and catch realtime-js 2.11.13 error', async () => {
+    if (!page) {
+      throw new Error('Page is not initialized')
+    }
+
     await page.goto(`http://localhost:${port}`)
     await page.waitForSelector('#log', { timeout: 4000 })
 
