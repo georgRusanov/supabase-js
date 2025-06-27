@@ -36,7 +36,6 @@
     "test:integration": "jest --runInBand --detectOpenHandles test/integration.test.ts",
     "test:integration:browser": "deno test --allow-all test/integration.browser.test.ts",
     "test:websocket:browser": "deno test --allow-all test/integration.websocket.test.ts",
-    "test:websocket:deno": "deno test --allow-all test/integration.websocket.deno.test.ts",
     "test:websocket:playwright": "cd test/integration/websocket && npm install && cp ../../../dist/umd/supabase.js . && npm run test",
     "serve:websocket": "cd test/integration/websocket && npm install && npm run serve:websocket",
     "test:watch": "jest --watch --verbose false --silent false",

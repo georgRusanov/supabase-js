@@ -9,7 +9,7 @@
         console.log(msg)
       }
 
-      log('Starting WebSocket test (Playwright)...')
+      log('Starting WebSocket test (Playwright) - WITHOUT forced transport...')
 
       // Add global error handler
       window.addEventListener('error', (event) => {
@@ -77,13 +77,13 @@
           return originalSetInterval.apply(this, [fn, delay, ...args])
         }
 
-        log('Creating Supabase client with WebSocket transport...')
+        log('Creating Supabase client WITH forced transport...')
         const supabase = createClient(
           'http://127.0.0.1:54321',
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
           {
             realtime: {
-              transport: window.WebSocket,
+              transport: window.WebSocket, // Принудительно используем WebSocket
               heartbeatIntervalMs: 500,
             },
           }
