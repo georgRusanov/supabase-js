@@ -205,18 +205,21 @@ jobs:
 
       - name: Run WebSocket tests
         run: |
+          echo "=== Git branch and status ==="
+          git branch -a
+          git status
+          echo "=== Current directory contents ==="
+          ls -la
           echo "=== Initial package.json realtime-js version ==="
           grep -A 2 -B 2 "realtime-js" package.json
           echo "=== Initial package-lock.json realtime-js version ==="
           grep -A 2 -B 2 "realtime-js" package-lock.json
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
-          # Force update package-lock.json to match package.json
-          echo "=== Running npm install --package-lock-only ==="
-          npm install --package-lock-only --verbose
-          echo "=== After npm install --package-lock-only ==="
-          grep -A 2 -B 2 "realtime-js" package-lock.json
-          echo "=== After npm clean-install ==="
+          # Force use version from branch (not merge commit)
+          git checkout HEAD -- package.json package-lock.json
+          echo "=== After git checkout HEAD ==="
+          grep -A 2 -B 2 "realtime-js" package.json
           grep -A 2 -B 2 "realtime-js" package-lock.json
           echo "=== Checking if other @supabase packages require realtime-js ==="
           npm view @supabase/auth-js@2.70.0 dependencies
