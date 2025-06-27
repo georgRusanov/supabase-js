@@ -87,6 +87,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -96,6 +97,10 @@ jobs:
 
       - name: Run integration tests
         run: |
+          # Aggressive cache cleaning to ensure we use package-lock.json version
+          npm cache clean --force
+          rm -rf node_modules
+          rm -rf ~/.npm
           npm clean-install
           npm run build
           npm run test:integration || npm run test:integration
@@ -123,7 +128,12 @@ jobs:
 
       - name: Run integration tests
         run: |
+          npm clean-install
+          npm run build
+          PKG=$(npm pack)
+          echo "Packed: $PKG"
           cd test/integration/next
+          npm install "../../../$PKG"
           npm install
           npx playwright install
           npm run test
@@ -169,6 +179,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -181,6 +192,10 @@ jobs:
 
       - name: Run WebSocket tests
         run: |
+          # Aggressive cache cleaning to ensure we use package-lock.json version
+          npm cache clean --force
+          rm -rf node_modules
+          rm -rf ~/.npm
           npm clean-install
           npm run build
           echo "=== Checking realtime-js version ==="
