@@ -98,6 +98,8 @@ jobs:
         run: |
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
+          # Force update package-lock.json to match package.json
+          npm install --package-lock-only
           # Clean cache to ensure we use current package-lock.json
           npm cache clean --force
           rm -rf node_modules
@@ -193,6 +195,8 @@ jobs:
         run: |
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
+          # Force update package-lock.json to match package.json
+          npm install --package-lock-only
           # Clean cache to ensure we use current package-lock.json
           npm cache clean --force
           rm -rf node_modules
