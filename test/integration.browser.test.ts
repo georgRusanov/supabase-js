@@ -94,7 +94,7 @@ const contentModule = `
   <body>
     <pre id="log" style="font-family: monospace"></pre>
     <script type="module">
-      import { createClient } from 'http://localhost:${port}/supabase-module.js'
+      import { createClient } from 'http://localhost:${port + 1}/supabase-module.js'
       
       const log = (msg) => {
         document.getElementById('log').textContent += msg + "\\n"
@@ -199,7 +199,10 @@ beforeAll(async () => {
       if (req.url.endsWith('supabase-module.js')) {
         const file = await Deno.readFile('./dist/module/index.js')
         return new Response(file, {
-          headers: { 'content-type': 'application/javascript' },
+          headers: {
+            'content-type': 'application/javascript',
+            'Access-Control-Allow-Origin': '*',
+          },
         })
       }
       return new Response(contentModule, {
