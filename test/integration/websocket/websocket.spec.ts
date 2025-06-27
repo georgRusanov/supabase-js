@@ -3,16 +3,16 @@ import { test, expect } from '@playwright/test'
 test.describe('WebSocket Browser Tests', () => {
   test('should test WebSocket transport and catch realtime-js 2.11.13 error', async ({ page }) => {
     // Navigate to our test page
-    await page.goto('http://localhost:8002')
+    await page.goto('/')
 
     // Wait for the log element to appear
-    await expect(page.getByTestId('log')).toBeVisible()
+    await expect(page.locator('#log')).toBeVisible()
 
     // Wait for the test to complete
     await page.waitForTimeout(5000)
 
     // Get the log content
-    const logContent = await page.getByTestId('log').textContent()
+    const logContent = await page.locator('#log').textContent()
     console.log('WebSocket test log content:', logContent)
 
     // Check for WebSocket constructor calls

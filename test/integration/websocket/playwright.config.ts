@@ -18,7 +18,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run serve:websocket',
+    command: 'cp ../../dist/umd/supabase.js . && npm run serve:websocket',
     url: 'http://localhost:8004',
     reuseExistingServer: !process.env.CI,
   },
