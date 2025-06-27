@@ -99,8 +99,8 @@ jobs:
         run: |
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
-          # Force update package-lock.json to match package.json
-          npm install --package-lock-only
+          # Force install specific version of realtime-js
+          npm install @supabase/realtime-js@2.11.13 --save-exact
           # Aggressive cache cleaning to ensure we use package-lock.json version
           npm cache clean --force
           rm -rf node_modules
@@ -196,15 +196,21 @@ jobs:
 
       - name: Run WebSocket tests
         run: |
+          echo "=== Initial package-lock.json realtime-js version ==="
+          grep -A 2 -B 2 "realtime-js" package-lock.json
           # Remove pnpm-lock.yaml to ensure npm uses only package-lock.json
           rm -f pnpm-lock.yaml
-          # Force update package-lock.json to match package.json
-          npm install --package-lock-only
+          # Force install specific version of realtime-js
+          npm install @supabase/realtime-js@2.11.13 --save-exact
+          echo "=== After npm install --save-exact ==="
+          grep -A 2 -B 2 "realtime-js" package-lock.json
           # Aggressive cache cleaning to ensure we use package-lock.json version
           npm cache clean --force
           rm -rf node_modules
           rm -rf ~/.npm
           npm clean-install
+          echo "=== After npm clean-install ==="
+          grep -A 2 -B 2 "realtime-js" package-lock.json
           npm run build
           echo "=== Checking realtime-js version ==="
           npm list @supabase/realtime-js
