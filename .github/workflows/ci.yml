@@ -182,7 +182,6 @@ jobs:
       - name: Run WebSocket tests
         run: |
           npm clean-install
-          npm run clean
           npm run build
           echo "=== Checking realtime-js version ==="
           npm list @supabase/realtime-js
