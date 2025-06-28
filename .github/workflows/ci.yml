@@ -130,6 +130,7 @@ jobs:
       - name: Install dependencies and build
         run: |
           npm ci
+          npm ci
           npm run build
 
       - name: Run integration tests
@@ -208,6 +209,37 @@ jobs:
           npm install
           npm install "../../../$PKG"
           npm test || npm test
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
+
+  websocket-browser-tests:
+    name: WebSocket Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install Playwright browsers and dependencies
+        run: npx playwright install --with-deps
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Run WebSocket tests
+        run: |
+          npm ci
+          npm run build:umd
+          cd test/integration/websocket
+          npm install
+          cp ../../../dist/umd/supabase.js .
+          npm run test
 
       - name: Stop Supabase
         if: always()
