@@ -203,6 +203,7 @@ jobs:
 
       - name: Build and test expo
         run: |
+          npm cache clean --force
           PKG=$(npm pack)
           echo "Packed: $PKG"
           cd test/integration/expo
