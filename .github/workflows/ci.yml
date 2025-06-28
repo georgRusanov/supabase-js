@@ -185,7 +185,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          # cache: 'npm'  # Disabled to avoid tarball cache issues
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -197,7 +197,8 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          npm ci
+          npm cache clean --force
+          npm clean-install
           npm run build
 
       - name: Build and test expo
@@ -205,8 +206,9 @@ jobs:
           PKG=$(npm pack)
           echo "Packed: $PKG"
           cd test/integration/expo
-          npm install
-          npm install "../../../$PKG"
+          npm cache clean --force
+          npm ci
+          npm install --no-cache "$(pwd)/../../../$PKG"
           npm test || npm test
 
       - name: Stop Supabase
