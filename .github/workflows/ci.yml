@@ -198,7 +198,7 @@ jobs:
       - name: Install dependencies and build
         run: |
           npm ci
-          npm run build
+          npm run  build
 
       - name: Build and test expo
         run: |
