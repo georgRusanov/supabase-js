@@ -32,20 +32,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: Install dependencies and build
         run: |
-          npm ci
-          npm run build
-          npm run build:umd
+          pnpm install
+          pnpm run build
+          pnpm run build:umd
 
       - name: Pack npm module
         id: pack
         run: |
-          PKG=$(npm pack)
+          pnpm pack > pack_output.txt 2>&1
+          PKG=$(grep -E '\.tgz$' pack_output.txt | tail -1)
           echo "filename=$PKG" >> "$GITHUB_OUTPUT"
 
       - name: Upload .tgz package
@@ -72,20 +78,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install
 
       - name: Type Check
-        run: npm run test:types
+        run: pnpm run test:types
 
       - name: Run Unit Tests + Coverage
-        run: npm run test:coverage
+        run: pnpm run test:coverage
 
       - name: Upload coverage results to Coveralls
         uses: coverallsapp/github-action@v2
@@ -109,34 +118,37 @@ jobs:
         with:
           deno-version: ${{ matrix.deno }}
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
       - name: Start Supabase
         run: supabase start
 
-      - name: Install dependencies and build
+      - name: Install dependencies and build module for Deno tests
         run: |
-          npm ci
-          npm run build
+          pnpm install
+          pnpm run build:module
 
       - name: Run Deno Tests
         run: |
           cd test/deno
-          npm ci
-          npm test || npm test
+          pnpm install
+          pnpm test || pnpm test
 
       - name: Run integration and browser tests on Deno 2.x only
         if: ${{ matrix.deno == '2.x' }}
-        run: npm run test:integration:browser
+        run: pnpm run test:integration:browser
 
       - name: Stop Supabase
         if: always()
@@ -150,11 +162,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -166,11 +181,11 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          npm ci
-          npm run build
+          pnpm install
+          pnpm run build
 
       - name: Run integration tests
-        run: npm run test:integration || npm run test:integration
+        run: pnpm run test:integration || pnpm run test:integration
 
       - name: Stop Supabase
         if: always()
@@ -184,11 +199,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -203,10 +221,10 @@ jobs:
 
       - name: Run integration tests
         run: |
+          pnpm install
           cd test/integration/next
-          npm ci
           npx playwright install
-          npm run test
+          pnpm test
 
       - name: Stop Supabase
         if: always()
@@ -220,32 +238,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: supabase-tgz
-          path: ./supabase-pkg
-
       - name: Start Supabase
         run: supabase start
 
       - name: Install dependencies and run tests
         run: |
+          pnpm install
           cd test/integration/expo
-          cp ../../../supabase-pkg/supabase-supabase-js-0.0.0-automated.tgz .
-          npm install
-          npm test || npm test
+          pnpm test || pnpm test
 
       - name: Stop Supabase
         if: always()
@@ -259,10 +273,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -283,10 +301,10 @@ jobs:
 
       - name: Run WebSocket tests
         run: |
+          pnpm install
           cd test/integration/node-browser
-          npm install
           cp ../../../dist/umd/supabase.js .
-          npm run test
+          pnpm test
 
       - name: Stop Supabase
         if: always()
