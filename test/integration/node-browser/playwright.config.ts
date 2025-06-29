@@ -1,16 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: './',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:8004',
     trace: 'on-first-retry',
-    video: 'on-first-retry',
   },
   projects: [
     {
@@ -27,8 +26,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm run dev',
-    url: 'http://localhost:3000',
+    command: 'cp ../../../dist/umd/supabase.js . && npm run serve:node-browser',
+    url: 'http://localhost:8004',
     reuseExistingServer: !process.env.CI,
   },
 })
