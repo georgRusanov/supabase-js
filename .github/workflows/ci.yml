@@ -21,6 +21,7 @@ on:
 
 env:
   NODE_VERSION: '20'
+  PNPM_VERSION: '8'
 
 jobs:
   build-package:
@@ -120,6 +121,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Start Supabase
         run: supabase start
 
@@ -131,8 +137,8 @@ jobs:
       - name: Run Deno Tests
         run: |
           cd test/deno
-          npm ci
-          npm test || npm test
+          pnpm install
+          pnpm test || pnpm test
 
       - name: Run integration and browser tests on Deno 2.x only
         if: ${{ matrix.deno == '2.x' }}

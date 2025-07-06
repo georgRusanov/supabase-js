@@ -1,8 +1,9 @@
 {
   "name": "test-deno",
   "private": true,
+  "packageManager": "pnpm@8.15.0",
   "scripts": {
-    "test": "npm run setup-deps && deno test --allow-all --unstable-sloppy-imports integration.test.ts",
+    "test": "pnpm run setup-deps && deno test --allow-all --unstable-sloppy-imports integration.test.ts",
     "setup-deps": "node setup-deps.js"
   },
   "dependencies": {

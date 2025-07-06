@@ -11,8 +11,8 @@ importers:
         specifier: 2.70.0
         version: 2.70.0
       '@supabase/functions-js':
-        specifier: 2.4.4
-        version: 2.4.4
+        specifier: 2.4.5
+        version: 2.4.5
       '@supabase/node-fetch':
         specifier: 2.6.15
         version: 2.6.15
@@ -86,6 +86,15 @@ importers:
       webpack-cli:
         specifier: ^4.9.2
         version: 4.10.0(webpack@5.99.6)
+
+  test/deno:
+    dependencies:
+      '@supabase/supabase-js':
+        specifier: file:../../
+        version: 'file:'
+      yaml:
+        specifier: ^2.3.4
+        version: 2.8.0
 
 packages:
   '@ampproject/remapping@2.3.0':
@@ -606,10 +615,10 @@ packages:
         integrity: sha512-BaAK/tOAZFJtzF1sE3gJ2FwTjLf4ky3PSvcvLGEgEmO4BSBkwWKu8l67rLLIBZPDnCyV7Owk2uPyKHa0kj5QGg==,
       }
 
-  '@supabase/functions-js@2.4.4':
+  '@supabase/functions-js@2.4.5':
     resolution:
       {
-        integrity: sha512-WL2p6r4AXNGwop7iwvul2BvOtuJ1YQy8EbOd0dhG1oN1q8el/BIRSFCFnWAMM/vJJlHWLi4ad22sKbKr9mvjoA==,
+        integrity: sha512-v5GSqb9zbosquTo6gBwIiq7W9eQ7rE5QazsK/ezNiQXdCbY+bH8D9qEaBIkhVvX4ZRW5rP03gEfw5yw9tiq4EQ==,
       }
 
   '@supabase/node-fetch@2.6.15':
@@ -636,6 +645,9 @@ packages:
       {
         integrity: sha512-asYHcyDR1fKqrMpytAS1zjyEfvxuOIp1CIXX7ji4lHHcJKqyk+sLl/Vxgm4sN6u8zvuUtae9e4kDxQP2qrwWBA==,
       }
+
+  '@supabase/supabase-js@file:':
+    resolution: { directory: '', type: directory }
 
   '@tootallnate/quickjs-emscripten@0.23.0':
     resolution:
@@ -5101,6 +5113,14 @@ packages:
       }
     engines: { node: '>= 6' }
 
+  yaml@2.8.0:
+    resolution:
+      {
+        integrity: sha512-4lLa/EcQCB0cJkyts+FpIRx5G/llPxfP6VQU5KByHEhLxY3IJCH0f0Hy1MHI8sClTvsIb8qwRJ6R/ZdlDJ/leQ==,
+      }
+    engines: { node: '>= 14.6' }
+    hasBin: true
+
   yargs-parser@20.2.9:
     resolution:
       {
@@ -5594,7 +5614,7 @@ snapshots:
     dependencies:
       '@supabase/node-fetch': 2.6.15
 
-  '@supabase/functions-js@2.4.4':
+  '@supabase/functions-js@2.4.5':
     dependencies:
       '@supabase/node-fetch': 2.6.15
 
@@ -5620,6 +5640,18 @@ snapshots:
   '@supabase/storage-js@2.7.1':
     dependencies:
       '@supabase/node-fetch': 2.6.15
+
+  '@supabase/supabase-js@file:':
+    dependencies:
+      '@supabase/auth-js': 2.70.0
+      '@supabase/functions-js': 2.4.5
+      '@supabase/node-fetch': 2.6.15
+      '@supabase/postgrest-js': 1.19.4
+      '@supabase/realtime-js': 2.11.15
+      '@supabase/storage-js': 2.7.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@tootallnate/quickjs-emscripten@0.23.0': {}
 
@@ -8552,6 +8584,8 @@ snapshots:
   yallist@4.0.0: {}
 
   yaml@1.10.2: {}
+
+  yaml@2.8.0: {}
 
   yargs-parser@20.2.9: {}
 
