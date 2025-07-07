@@ -40,6 +40,13 @@ jobs:
       - name: Install dependencies and build
         run: |
           npm ci
+          echo "=== Root project dependencies ==="
+          echo "Package.json @supabase dependencies:"
+          cat package.json | grep -A 10 -B 2 "@supabase"
+          echo ""
+          echo "Installed @supabase/realtime-js version:"
+          npm list @supabase/realtime-js
+          echo "====================================="
           npm run build
           npm run build:umd
 
@@ -173,6 +180,13 @@ jobs:
       - name: Install dependencies and build
         run: |
           npm ci
+          echo "=== Node Integration - Root project dependencies ==="
+          echo "Package.json @supabase dependencies:"
+          cat package.json | grep -A 10 -B 2 "@supabase"
+          echo ""
+          echo "Installed @supabase/realtime-js version:"
+          npm list @supabase/realtime-js
+          echo "================================================"
           npm run build
 
       - name: Run integration tests
@@ -217,6 +231,15 @@ jobs:
           cd test/integration/next
           pnpm install
           npx playwright install
+
+          echo "=== Next.js Integration - Dependencies ==="
+          echo "Package.json dependencies:"
+          cat package.json | grep -A 10 -B 2 "@supabase" || echo "No @supabase dependencies found"
+          echo ""
+          echo "Installed @supabase packages:"
+          pnpm list | grep "@supabase" || echo "No @supabase packages found"
+          echo "========================================="
+
           pnpm test
 
       - name: Stop Supabase
@@ -256,6 +279,18 @@ jobs:
           cd test/integration/expo
           cp ../../../supabase-pkg/supabase-supabase-js-0.0.0-automated.tgz .
           npm install
+
+          echo "=== Checking Supabase dependencies in Expo tests ==="
+          echo "Package.json dependencies:"
+          cat package.json | grep -A 10 -B 2 "@supabase"
+          echo ""
+          echo "Installed @supabase/realtime-js version:"
+          npm list @supabase/realtime-js
+          echo ""
+          echo "All @supabase packages:"
+          npm list | grep "@supabase"
+          echo "================================================"
+
           npm test || npm test
 
       - name: Stop Supabase
@@ -297,6 +332,18 @@ jobs:
           cd test/integration/node-browser
           npm install
           cp ../../../dist/umd/supabase.js .
+
+          echo "=== WebSocket Browser Tests - Dependencies ==="
+          echo "Package.json dependencies:"
+          cat package.json | grep -A 10 -B 2 "@supabase" || echo "No @supabase dependencies found"
+          echo ""
+          echo "Installed @supabase packages:"
+          npm list | grep "@supabase" || echo "No @supabase packages found"
+          echo ""
+          echo "UMD file info:"
+          ls -la supabase.js
+          echo "============================================="
+
           npm run test
 
       - name: Stop Supabase
