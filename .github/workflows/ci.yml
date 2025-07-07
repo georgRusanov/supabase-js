@@ -152,8 +152,8 @@ jobs:
         run: |
           cd test/deno
           cp ../../supabase-pkg/supabase-supabase-js-0.0.0-automated.tgz .
-          pnpm install
-          pnpm test || pnpm test
+          npm install
+          npm test || npm test
 
       - name: Run integration and browser tests on Deno 2.x only
         if: ${{ matrix.deno == '2.x' }}

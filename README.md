@@ -145,7 +145,7 @@ cd test/integration/expo && npm install
 cd test/integration/next && pnpm install
 
 # Update Deno test dependencies
-cd test/deno && pnpm install
+cd test/deno && npm install
 ```
 
 **Note:** The CI automatically handles dependency synchronization, so manual updates are only needed for local development and testing.
