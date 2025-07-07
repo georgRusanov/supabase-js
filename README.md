@@ -102,17 +102,25 @@ pnpm run test:integration
 
 The project includes Expo integration tests to ensure compatibility with React Native environments.
 
+### Next.js Testing
+
+The project includes Next.js integration tests to ensure compatibility with React SSR environments.
+
+### Deno Testing
+
+The project includes Deno integration tests to ensure compatibility with Deno runtime.
+
 #### CI/CD Testing
 
 When running on CI, the tests automatically use the latest dependencies from the root project. The CI pipeline:
 
 1. Builds the main project with current dependencies
 2. Creates a package archive (`.tgz`) with the latest versions
-3. Uses this archive in Expo tests to ensure consistency
+3. Uses this archive in Expo, Next.js, and Deno tests to ensure consistency
 
 #### Local Development
 
-For local development of Expo tests, you may need to manually update dependencies:
+For local development of Expo, Next.js, and Deno tests, you may need to manually update dependencies:
 
 ```bash
 # Update dependencies in the root project
@@ -124,8 +132,20 @@ npm run build && npm pack
 # Copy the new archive to Expo tests
 cp supabase-supabase-js-*.tgz test/integration/expo/supabase-supabase-js-0.0.0-automated.tgz
 
+# Copy the new archive to Next.js tests
+cp supabase-supabase-js-*.tgz test/integration/next/supabase-supabase-js-0.0.0-automated.tgz
+
+# Copy the new archive to Deno tests
+cp supabase-supabase-js-*.tgz test/deno/supabase-supabase-js-0.0.0-automated.tgz
+
 # Update Expo test dependencies
 cd test/integration/expo && npm install
+
+# Update Next.js test dependencies
+cd test/integration/next && pnpm install
+
+# Update Deno test dependencies
+cd test/deno && pnpm install
 ```
 
 **Note:** The CI automatically handles dependency synchronization, so manual updates are only needed for local development and testing.
