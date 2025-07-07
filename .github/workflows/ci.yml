@@ -196,6 +196,11 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -210,9 +215,9 @@ jobs:
       - name: Run integration tests
         run: |
           cd test/integration/next
-          npm ci
+          pnpm install
           npx playwright install
-          npm run test
+          pnpm test
 
       - name: Stop Supabase
         if: always()
