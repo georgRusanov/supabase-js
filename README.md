@@ -98,6 +98,38 @@ supabase start
 pnpm run test:integration
 ```
 
+### Expo Testing
+
+The project includes Expo integration tests to ensure compatibility with React Native environments.
+
+#### CI/CD Testing
+
+When running on CI, the tests automatically use the latest dependencies from the root project. The CI pipeline:
+
+1. Builds the main project with current dependencies
+2. Creates a package archive (`.tgz`) with the latest versions
+3. Uses this archive in Expo tests to ensure consistency
+
+#### Local Development
+
+For local development of Expo tests, you may need to manually update dependencies:
+
+```bash
+# Update dependencies in the root project
+npm install @supabase/realtime-js@latest
+
+# Rebuild and create new package archive
+npm run build && npm pack
+
+# Copy the new archive to Expo tests
+cp supabase-supabase-js-*.tgz test/integration/expo/supabase-supabase-js-0.0.0-automated.tgz
+
+# Update Expo test dependencies
+cd test/integration/expo && npm install
+```
+
+**Note:** The CI automatically handles dependency synchronization, so manual updates are only needed for local development and testing.
+
 ## Badges
 
 [![Coverage Status](https://coveralls.io/repos/github/supabase/supabase-js/badge.svg?branch=master)](https://coveralls.io/github/supabase/supabase-js?branch=master)
