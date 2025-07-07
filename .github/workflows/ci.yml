@@ -218,11 +218,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -244,7 +239,7 @@ jobs:
         run: |
           cd test/integration/next
           cp ../../../supabase-pkg/supabase-supabase-js-0.0.0-automated.tgz .
-          pnpm install
+          npm install
           npx playwright install
 
           echo "=== Next.js Integration - Dependencies ==="
@@ -252,10 +247,10 @@ jobs:
           cat package.json | grep -A 10 -B 2 "@supabase" || echo "No @supabase dependencies found"
           echo ""
           echo "Installed @supabase packages:"
-          pnpm list | grep "@supabase" || echo "No @supabase packages found"
+          npm list | grep "@supabase" || echo "No @supabase packages found"
           echo "========================================="
 
-          pnpm test
+          npm test
 
       - name: Stop Supabase
         if: always()

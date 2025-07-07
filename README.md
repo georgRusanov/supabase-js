@@ -120,32 +120,16 @@ When running on CI, the tests automatically use the latest dependencies from the
 
 #### Local Development
 
-For local development of Expo, Next.js, and Deno tests, you may need to manually update dependencies:
+For local development of Expo, Next.js, and Deno tests, you can update dependencies using automated scripts:
 
 ```bash
-# Update dependencies in the root project
-npm install @supabase/realtime-js@latest
+# Update all test dependencies at once
+npm run update:test-deps
 
-# Rebuild and create new package archive
-npm run build && npm pack
-
-# Copy the new archive to Expo tests
-cp supabase-supabase-js-*.tgz test/integration/expo/supabase-supabase-js-0.0.0-automated.tgz
-
-# Copy the new archive to Next.js tests
-cp supabase-supabase-js-*.tgz test/integration/next/supabase-supabase-js-0.0.0-automated.tgz
-
-# Copy the new archive to Deno tests
-cp supabase-supabase-js-*.tgz test/deno/supabase-supabase-js-0.0.0-automated.tgz
-
-# Update Expo test dependencies
-cd test/integration/expo && npm install
-
-# Update Next.js test dependencies
-cd test/integration/next && pnpm install
-
-# Update Deno test dependencies
-cd test/deno && npm install
+# Or update specific test environments:
+npm run update:test-deps:expo    # Expo tests only
+npm run update:test-deps:next    # Next.js tests only
+npm run update:test-deps:deno    # Deno tests only
 ```
 
 **Note:** The CI automatically handles dependency synchronization, so manual updates are only needed for local development and testing.
