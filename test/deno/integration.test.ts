@@ -15,7 +15,14 @@ Deno.test(
     const ANON_KEY =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 
+    // use service_role key for Storage API tests
+    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || 'use-service-role-key'
+
     const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+      realtime: { heartbeatIntervalMs: 500 },
+    })
+
+    const supabaseWithServiceRole = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       realtime: { heartbeatIntervalMs: 500 },
     })
 
@@ -196,6 +203,34 @@ Deno.test(
 
         // Cleanup channel
         await channel.unsubscribe()
+      })
+
+      await t.step('Storage API - upload and list file in bucket', async () => {
+        const bucket = 'test-bucket'
+        const filePath = 'deno-test-file.txt'
+        const fileContent = new Blob(['Hello, Deno Storage Test!'], { type: 'text/plain' })
+
+        // upload
+        const { data: uploadData, error: uploadError } = await supabaseWithServiceRole.storage
+          .from(bucket)
+          .upload(filePath, fileContent, { upsert: true })
+
+        assertEquals(uploadError, null)
+        assertExists(uploadData)
+
+        // list
+        const { data: listData, error: listError } = await supabaseWithServiceRole.storage
+          .from(bucket)
+          .list()
+
+        assertEquals(listError, null)
+        assertEquals(Array.isArray(listData), true)
+        if (!listData) throw new Error('listData is null')
+        const fileNames = listData.map((f: any) => f.name)
+        assertEquals(fileNames.includes('deno-test-file.txt'), true)
+
+        // cleanup
+        await supabaseWithServiceRole.storage.from(bucket).remove([filePath])
       })
     } finally {
       // Ensure cleanup runs even if tests fail

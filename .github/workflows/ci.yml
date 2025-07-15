@@ -134,12 +134,16 @@ jobs:
           npm ci
           npm run build
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Run Deno Tests
         run: |
           cd test/deno
           cp ../../supabase-pkg/supabase-supabase-js-0.0.0-automated.tgz .
           npm install
-          npm test || npm test
+          SERVICE_ROLE_KEY="$(supabase status --output json | jq -r '.SERVICE_ROLE_KEY')"
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" deno test --allow-all --unstable-sloppy-imports integration.test.ts
 
       - name: Run integration and browser tests on Deno 2.x only
         if: ${{ matrix.deno == '2.x' }}
@@ -297,12 +301,16 @@ jobs:
       - name: Start Supabase
         run: supabase start
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Install dependencies and run tests
         run: |
           cd test/integration/bun
           cp ../../../supabase-pkg/supabase-supabase-js-0.0.0-automated.tgz .
           bun install
-          bun test
+          SERVICE_ROLE_KEY="$(supabase status --output json | jq -r '.SERVICE_ROLE_KEY')"
+          SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" bun test
 
       - name: Stop Supabase
         if: always()

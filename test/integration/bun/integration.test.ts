@@ -5,7 +5,14 @@ const SUPABASE_URL = 'http://127.0.0.1:54321'
 const ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 
+// Используем service_role key для Storage API тестов
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'use-service-role-key'
+
 const supabase = createClient(SUPABASE_URL, ANON_KEY, {
+  realtime: { heartbeatIntervalMs: 500 },
+})
+
+const supabaseWithServiceRole = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   realtime: { heartbeatIntervalMs: 500 },
 })
 
@@ -109,3 +116,31 @@ test('should handle invalid credentials', async () => {
   expect(error).not.toBeNull()
   expect(data.user).toBeNull()
 })
+
+test('Storage API - upload and list file in bucket', async () => {
+  const bucket = 'test-bucket'
+  const filePath = 'bun-test-file.txt'
+  const fileContent = new Blob(['Hello, Bun Storage Test!'], { type: 'text/plain' })
+
+  // upload
+  const { data: uploadData, error: uploadError } = await supabaseWithServiceRole.storage
+    .from(bucket)
+    .upload(filePath, fileContent, { upsert: true })
+
+  expect(uploadError).toBeNull()
+  expect(uploadData).toBeDefined()
+
+  // list
+  const { data: listData, error: listError } = await supabaseWithServiceRole.storage
+    .from(bucket)
+    .list()
+
+  expect(listError).toBeNull()
+  expect(Array.isArray(listData)).toBe(true)
+  if (!listData) throw new Error('listData is null')
+  const fileNames = listData.map((f: any) => f.name)
+  expect(fileNames).toContain('bun-test-file.txt')
+
+  // cleanup
+  await supabaseWithServiceRole.storage.from(bucket).remove([filePath])
+}, 10000)
